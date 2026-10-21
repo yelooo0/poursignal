@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PourSignal — Texas bar &amp; restaurant alcohol sales data</title>
+<meta name="description" content="Monthly alcohol sales for every Texas bar and restaurant, mapped to chains and tickers. Built from Texas Comptroller mixed-beverage filings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #EDF2EC; --paper-deep: #E1E9E0; --rule: #BCCFC0; --ink: #16261F; --ink-soft: #4A5D53;
+  --bottle: #1F4D3C; --liquor: #B8720F; --wine: #8A2C3B; --beer: #D4AE3E; --white: #FBFDFB;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: Archivo, system-ui, sans-serif;
+  font-size: 17px; line-height: 1.55; font-variation-settings: "wdth" 100; }
+a { color: var(--bottle); text-underline-offset: 3px; }
+a:focus-visible, .button:focus-visible { outline: 3px solid var(--liquor); outline-offset: 3px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+header.top { display: flex; justify-content: space-between; align-items: baseline; padding: 22px 0; }
+.mark { font-weight: 800; font-variation-settings: "wdth" 125; font-size: 20px; letter-spacing: -0.01em; color: var(--bottle); text-decoration: none; }
+.top nav a { margin-left: 22px; font-size: 15px; color: var(--ink-soft); text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+
+.hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: start; padding: 40px 0 72px; }
+h1 { font-variation-settings: "wdth" 118; font-weight: 820; font-size: clamp(40px, 6.2vw, 74px);
+  line-height: 0.98; letter-spacing: -0.025em; margin: 0 0 24px; color: var(--bottle); }
+.lede { font-size: 20px; line-height: 1.5; max-width: 34em; color: var(--ink); margin: 0 0 28px; }
+.facts { display: grid; grid-template-columns: repeat(3, auto); gap: 6px 32px; margin: 0 0 32px; padding: 0; list-style: none; }
+.facts b { display: block; font-size: 26px; font-variation-settings: "wdth" 110; font-weight: 750; font-variant-numeric: tabular-nums; }
+.facts span { font-size: 14px; color: var(--ink-soft); }
+.actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.button { display: inline-block; padding: 13px 22px; border-radius: 3px; font-weight: 650; text-decoration: none; font-size: 16px; }
+.button.primary { background: var(--bottle); color: var(--white); }
+.button.primary:hover { background: #173d30; }
+.button.quiet { border: 1.5px solid var(--bottle); color: var(--bottle); }
+
+.ledger { background: var(--white); border: 1px solid var(--rule); padding: 22px 24px 18px; }
+.ledger h2 { font-size: 15px; font-weight: 650; margin: 0 0 4px; }
+.ledger .sub { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; }
+.ledger ol { list-style: none; margin: 0; padding: 0; }
+.ledger li { display: grid; grid-template-columns: minmax(0, 1fr) 84px; grid-template-rows: auto 8px; column-gap: 12px; height: 50px; align-content: center; border-bottom: 1px solid var(--rule); }
+.who { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.venue { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.city { font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+.amt { grid-row: 1 / span 2; grid-column: 2; align-self: center; text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }
+.bar { display: flex; height: 6px; margin-top: 3px; }
+.seg.liquor { background: var(--liquor); } .seg.wine { background: var(--wine); } .seg.beer { background: var(--beer); }
+.key { display: flex; gap: 18px; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+.key i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+
+section { padding: 72px 0; border-top: 1px solid var(--rule); }
+h2.sec { font-variation-settings: "wdth" 112; font-weight: 780; font-size: clamp(28px, 3.6vw, 40px); line-height: 1.08;
+  letter-spacing: -0.015em; margin: 0 0 16px; color: var(--bottle); max-width: 22em; }
+.intro { max-width: 40em; margin: 0 0 36px; }
+.proof { display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; }
+figure { margin: 0; }
+figcaption { font-size: 15px; color: var(--ink-soft); margin-top: 10px; max-width: 36em; }
+.chart { width: 100%; height: auto; background: var(--white); border: 1px solid var(--rule); }
+.chart .rule { stroke: var(--paper-deep); } .chart .zero { stroke: var(--ink-soft); stroke-width: 1; }
+.chart .tick { font-size: 12px; fill: var(--ink-soft); font-family: Archivo, sans-serif; }
+.chart .line { fill: none; stroke-width: 2.5; }
+.chart .reported { stroke: var(--ink); fill: var(--ink); } .chart .texas { stroke: var(--liquor); fill: var(--liquor); }
+.chart path.reported, .chart path.texas { fill: none; }
+.legend { display: flex; gap: 20px; font-size: 14px; margin: 0 0 10px; }
+.legend i { display: inline-block; width: 18px; height: 3px; margin-right: 8px; vertical-align: 4px; }
+.stat-note { font-size: 16px; }
+.stat-note p { margin: 0 0 18px; }
+.stat-note b { font-variant-numeric: tabular-nums; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--white); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 720px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--paper-deep); vertical-align: top; }
+thead th { font-weight: 650; font-size: 13px; color: var(--ink-soft); background: var(--paper); }
+tbody th { font-weight: 750; font-variation-settings: "wdth" 110; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.locked { color: var(--ink-soft); font-style: italic; }
+.small { font-size: 14px; color: var(--ink-soft); margin-top: 12px; max-width: 46em; }
+
+.menu { max-width: 860px; }
+.menu .item { padding: 26px 0; border-bottom: 1px dashed var(--rule); }
+.menu .item:last-child { border-bottom: 0; }
+.menu .line1 { display: flex; align-items: baseline; gap: 12px; }
+.menu h3 { font-size: 22px; font-variation-settings: "wdth" 108; font-weight: 720; margin: 0; white-space: nowrap; }
+.menu .dots { flex: 1; border-bottom: 2px dotted var(--ink-soft); transform: translateY(-5px); min-width: 24px; }
+.menu .price { font-size: 22px; font-weight: 720; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.menu .for { color: var(--ink-soft); margin: 6px 0 8px; font-size: 15px; }
+.menu ul { margin: 0; padding-left: 20px; max-width: 44em; }
+.menu .opts { margin-top: 8px; font-size: 15px; }
+
+.samples { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.samples a { font-weight: 650; }
+.samples p { margin: 6px 0 0; font-size: 15px; color: var(--ink-soft); }
+.method { columns: 2; column-gap: 48px; max-width: 980px; font-size: 16px; }
+.method p { margin: 0 0 16px; break-inside: avoid; }
+footer { padding: 56px 0 72px; border-top: 1px solid var(--rule); }
+footer .cta { font-size: 24px; font-variation-settings: "wdth" 110; font-weight: 700; margin: 0 0 8px; }
+
+@media (max-width: 860px) {
+  .hero, .proof { grid-template-columns: 1fr; gap: 36px; }
+  .samples { grid-template-columns: 1fr; }
+  .method { columns: 1; }
+  .top nav { display: none; }
+  .facts { grid-template-columns: repeat(2, auto); }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 0 16px; }
+  .menu .line1 { flex-wrap: wrap; }
+  .menu .dots { display: none; }
+  .menu h3 { white-space: normal; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="mark" href="#">PourSignal</a>
+  <nav><a href="#proof">Backtest</a><a href="#tickers">Tickers</a><a href="#pricing">Pricing</a><a href="#samples">Free samples</a></nav>
+</header>
+
+<div class="hero">
+  <div>
+    <h1>What every bar in Texas poured last month.</h1>
+    <p class="lede">Venue-level liquor, wine and beer sales for all 20,469 Texas bars and restaurants that file
+    with the state, cleaned and mapped to 93 chains and their stock tickers. Updated weekly from the Texas Comptroller's
+    mixed-beverage tax filings.</p>
+    <ul class="facts">
+      <li><b>$10.5B</b><span>alcohol sold, last 12 months</span></li>
+      <li><b>4,979</b><span>venues averaging $50k+ a month</span></li>
+      <li><b>Since 2014</b><span>monthly history</span></li>
+    </ul>
+    <div class="actions">
+      <a class="button primary" href="#samples">Download free samples</a>
+      
+    </div>
+  </div>
+  <div class="ledger">
+    <h2>Top Texas venues by alcohol sales, August 2026</h2>
+    <p class="sub">Reported receipts as filed with the Texas Comptroller</p>
+    <ol>
+<li><div class="who"><span class="venue">Aramark Sports &amp; Entertainment Services Of Texas</span><span class="city">Houston</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:46.27%"></span><span class="seg wine" style="width:6.32%"></span><span class="seg beer" style="width:47.41%"></span></div><span class="amt">$3.9M</span></li>
+<li><div class="who"><span class="venue">AT&amp;T Stadium</span><span class="city">Arlington</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:47.06%"></span><span class="seg wine" style="width:3.56%"></span><span class="seg beer" style="width:41.97%"></span></div><span class="amt">$3.6M</span></li>
+<li><div class="who"><span class="venue">Texas Ranger Ballpark</span><span class="city">Arlington</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:30.92%"></span><span class="seg wine" style="width:0.00%"></span><span class="seg beer" style="width:39.71%"></span></div><span class="amt">$2.7M</span></li>
+<li><div class="who"><span class="venue">Moody Center At University Of Texas</span><span class="city">Austin</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:27.00%"></span><span class="seg wine" style="width:4.91%"></span><span class="seg beer" style="width:20.30%"></span></div><span class="amt">$2.1M</span></li>
+<li><div class="who"><span class="venue">Dos Equis Pavilion</span><span class="city">Dallas</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:52.72%"></span><span class="seg wine" style="width:0.00%"></span><span class="seg beer" style="width:0.00%"></span></div><span class="amt">$2.0M</span></li>
+<li><div class="who"><span class="venue">Gaylord Texan</span><span class="city">Grapevine</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:32.13%"></span><span class="seg wine" style="width:8.81%"></span><span class="seg beer" style="width:10.26%"></span></div><span class="amt">$2.0M</span></li>
+<li><div class="who"><span class="venue">Levy Restaurants At Toyota Center</span><span class="city">Houston</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:30.02%"></span><span class="seg wine" style="width:0.73%"></span><span class="seg beer" style="width:19.66%"></span></div><span class="amt">$1.9M</span></li>
+<li><div class="who"><span class="venue">Backyard c/o Texas Live!</span><span class="city">Arlington</span></div><div class="bar" aria-hidden="true"><span class="seg liquor" style="width:22.46%"></span><span class="seg wine" style="width:0.48%"></span><span class="seg beer" style="width:19.60%"></span></div><span class="amt">$1.6M</span></li>
+    </ol>
+    <div class="key"><span><i style="background:var(--liquor)"></i>Liquor</span><span><i style="background:var(--wine)"></i>Wine</span><span><i style="background:var(--beer)"></i>Beer</span></div>
+  </div>
+</div>
+
+<section id="proof">
+  <h2 class="sec">Texas alcohol sales moved with Chili's reported comps.</h2>
+  <p class="intro">We rebuilt same-store alcohol sales for each chain's Texas venues and lined them up against the comparable
+  sales each company reported to investors. Alcohol is only part of a restaurant check, so the level differs; the turns line up.</p>
+  <div class="proof">
+    <figure>
+      <div class="legend"><span><i style="background:var(--ink)"></i>Chili's reported comps (Brinker)</span><span><i style="background:var(--liquor)"></i>Texas alcohol comps, PourSignal</span></div>
+      <svg viewBox="0 0 640 300" role="img" aria-labelledby="c1" class="chart"><line x1="48" x2="606" y1="219.1" y2="219.1" class="zero"/><text x="40" y="223.1" class="tick" text-anchor="end">0%</text><line x1="48" x2="606" y1="161.6" y2="161.6" class="rule"/><text x="40" y="165.6" class="tick" text-anchor="end">10%</text><line x1="48" x2="606" y1="104.0" y2="104.0" class="rule"/><text x="40" y="108.0" class="tick" text-anchor="end">20%</text><line x1="48" x2="606" y1="46.5" y2="46.5" class="rule"/><text x="40" y="50.5" class="tick" text-anchor="end">30%</text><path d="M48.0,138.0 L127.7,38.4 L207.4,37.3 L287.1,82.7 L366.9,96.0 L446.6,169.6 L526.3,196.1 L606.0,186.9" class="line reported"/><circle cx="48.0" cy="138.0" r="3.5" class="dot reported"/><circle cx="127.7" cy="38.4" r="3.5" class="dot reported"/><circle cx="207.4" cy="37.3" r="3.5" class="dot reported"/><circle cx="287.1" cy="82.7" r="3.5" class="dot reported"/><circle cx="366.9" cy="96.0" r="3.5" class="dot reported"/><circle cx="446.6" cy="169.6" r="3.5" class="dot reported"/><circle cx="526.3" cy="196.1" r="3.5" class="dot reported"/><circle cx="606.0" cy="186.9" r="3.5" class="dot reported"/><path d="M48.0,224.2 L127.7,151.4 L207.4,162.9 L287.1,196.5 L366.9,160.4 L446.6,190.7 L526.3,238.7 L606.0,215.8" class="line texas"/><circle cx="48.0" cy="224.2" r="3.5" class="dot texas"/><circle cx="127.7" cy="151.4" r="3.5" class="dot texas"/><circle cx="207.4" cy="162.9" r="3.5" class="dot texas"/><circle cx="287.1" cy="196.5" r="3.5" class="dot texas"/><circle cx="366.9" cy="160.4" r="3.5" class="dot texas"/><circle cx="446.6" cy="190.7" r="3.5" class="dot texas"/><circle cx="526.3" cy="238.7" r="3.5" class="dot texas"/><circle cx="606.0" cy="215.8" r="3.5" class="dot texas"/><text x="48.0" y="274" class="tick" text-anchor="middle">FY25 Q1</text><text x="127.7" y="274" class="tick" text-anchor="middle">FY25 Q2</text><text x="207.4" y="274" class="tick" text-anchor="middle">FY25 Q3</text><text x="287.1" y="274" class="tick" text-anchor="middle">FY25 Q4</text><text x="366.9" y="274" class="tick" text-anchor="middle">FY26 Q1</text><text x="446.6" y="274" class="tick" text-anchor="middle">FY26 Q2</text><text x="526.3" y="274" class="tick" text-anchor="middle">FY26 Q3</text><text x="606.0" y="274" class="tick" text-anchor="middle">FY26 Q4</text></svg>
+      <figcaption id="c1">Brinker fiscal quarters FY25 Q1 – FY26 Q4. Correlation 0.83 across 8 quarters.
+      Reported figures from Brinker's earnings releases.</figcaption>
+    </figure>
+    <div class="stat-note">
+      <p><b>0.83</b> correlation between Texas alcohol comps and Chili's reported comparable sales over 8 quarters,
+      including the late-2024 surge and the slowdown that followed.</p>
+      <p>Texas Roadhouse shows a different, equally useful signal: its Texas alcohol comps ran <b>11 points</b> below
+      reported comps on average (correlation 0.62), a direct read on falling drink attach while traffic grew.</p>
+      <p>Quarters are calendar or fiscal as each company reports them. The full backtest, with every source link, ships with the Chain Tracker.</p>
+    </div>
+  </div>
+</section>
+
+<section id="tickers">
+  <h2 class="sec">2026 Q3 to date, by ticker.</h2>
+  <p class="intro">Same-store alcohol sales growth for each public company's Texas venues. Quarter to date covers
+  complete months through August 2026; September 2026 is 41% filed and arrives in the next update.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Ticker</th><th>Texas brands</th><th class="num">Venues</th><th class="num">Last 12 mo.</th>
+    <th class="num">Q1 comp</th><th class="num">Q2 comp</th><th class="num">Q3 to date</th></tr></thead>
+    <tbody>
+<tr><th scope="row">DRI</th><td>Cheddar&#x27;s Scratch Kitchen, Chuy&#x27;s, Eddie V&#x27;s, LongHorn Steakhouse, Olive Garden, Ruth&#x27;s Chris, Seasons 52, The Capital Grille, Yard House</td><td class="num">320</td><td class="num">$162.6M</td><td class="num">-4.8%</td><td class="num">+1.0%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">EAT</th><td>Chili&#x27;s, Maggiano&#x27;s</td><td class="num">228</td><td class="num">$111.9M</td><td class="num">-3.9%</td><td class="num">-0.2%</td><td class="num">-4.2%</td></tr>
+<tr><th scope="row">TXRH</th><td>Bubba&#x27;s 33, Texas Roadhouse</td><td class="num">110</td><td class="num">$97.4M</td><td class="num">-4.4%</td><td class="num">-2.4%</td><td class="num">-2.2%</td></tr>
+<tr><th scope="row">ARMK</th><td>Aramark Sports &amp; Entertainment</td><td class="num">7</td><td class="num">$74.0M</td><td class="num">+46.5%</td><td class="num">+4.0%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">TWNP</th><td>Twin Peaks</td><td class="num">31</td><td class="num">$65.0M</td><td class="num">-7.9%</td><td class="num">-13.6%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">CAKE</th><td>Culinary Dropout, North Italia, The Cheesecake Factory</td><td class="num">36</td><td class="num">$47.8M</td><td class="num">-1.1%</td><td class="num">-0.8%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">PLAY</th><td>Dave &amp; Buster&#x27;s, Main Event</td><td class="num">40</td><td class="num">$32.4M</td><td class="num">-3.0%</td><td class="num">+5.8%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">DIN</th><td>Applebee&#x27;s (franchised)</td><td class="num">94</td><td class="num">$32.1M</td><td class="num">-5.1%</td><td class="num">-4.6%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">BLMN</th><td>Bonefish Grill, Carrabba&#x27;s Italian Grill, Fleming&#x27;s, Outback Steakhouse</td><td class="num">77</td><td class="num">$32.0M</td><td class="num">-4.8%</td><td class="num">-2.5%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">BJRI</th><td>BJ&#x27;s Restaurant &amp; Brewhouse</td><td class="num">37</td><td class="num">$29.0M</td><td class="num">-1.3%</td><td class="num">+2.9%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">STKS</th><td>Benihana, Kona Grill, RA Sushi, STK Steakhouse</td><td class="num">25</td><td class="num">$13.2M</td><td class="num">-13.7%</td><td class="num">-9.7%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">LUCK</th><td>Bowlero / Lucky Strike / AMF</td><td class="num">26</td><td class="num">$13.0M</td><td class="num">-10.6%</td><td class="num">-10.7%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">SONY</th><td>Alamo Drafthouse</td><td class="num">17</td><td class="num">$12.1M</td><td class="num">-15.0%</td><td class="num">-15.1%</td><td class="num locked">in pack</td></tr>
+<tr><th scope="row">CNK</th><td>Cinemark</td><td class="num">56</td><td class="num">$10.4M</td><td class="num">+29.5%</td><td class="num">+11.5%</td><td class="num locked">in pack</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">Calendar quarters. Comparable venues reported in both years and opened at least 18 months earlier.
+  Tickers with at least $10M of Texas alcohol sales in the last 12 months.</p>
+</section>
+
+<section id="pricing">
+  <h2 class="sec">Pricing</h2>
+  <p class="intro">Founding customers get 30% off the first year. Every purchase includes the data dictionary and email support.</p>
+  <div class="menu">
+    <div class="item">
+      <div class="line1"><h3>Account Intelligence</h3><span class="dots"></span><span class="price">from $149</span></div>
+      <p class="for">For bar-tech and inventory sales teams, beverage suppliers, distributors and insurance agents.</p>
+      <ul>
+        <li>Every active Texas venue ranked by last-12-month alcohol sales, with liquor, wine and beer split and growth</li>
+        <li>Owner group, chain, address, metro and TABC permit number; new venues flagged</li>
+        <li>CSV ready for your CRM</li>
+      </ul>
+      <p class="opts">One metro $149, all of Texas $399. Add a monthly refresh with new-venue alerts for $79 a month.</p>
+    </div>
+    <div class="item">
+      <div class="line1"><h3>Chain Tracker</h3><span class="dots"></span><span class="price">from $500</span></div>
+      <p class="for">For equity analysts, funds and restaurant operators benchmarking competitors.</p>
+      <ul>
+        <li>Monthly and quarterly same-store alcohol sales for 14 public tickers and 93 chains in Texas</li>
+        <li>Venue counts, liquor/wine/beer mix, openings and closures, with the chain mapping rules for audit</li>
+        <li>Backtest against reported comps with sources</li>
+      </ul>
+      <p class="opts">Earnings-season pack $500. Subscription with weekly updates $750 a month, or $7,500 a year.</p>
+    </div>
+    <div class="item">
+      <div class="line1"><h3>Full panel license</h3><span class="dots"></span><span class="price">from $12,000 a year</span></div>
+      <p class="for">For data platforms, insurers and lenders.</p>
+      <ul>
+        <li>Every venue-month since 2014 with stable venue IDs and entity resolution</li>
+        <li>Weekly delivery by CSV, Parquet or API</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="samples">
+  <h2 class="sec">Free samples</h2>
+  <div class="samples">
+    <div><a href="samples/sample_accounts_austin_top50.csv" download>Austin top 50 accounts (CSV)</a>
+      <p>The 50 Austin-area venues with the highest alcohol sales over the last 12 months, with every Account Intelligence field.</p></div>
+    <div><a href="samples/sample_chain_tracker_EAT_TXRH.csv" download>Chain Tracker: EAT and TXRH (CSV)</a>
+      <p>Monthly receipts, venue counts and comps for Chili's, Maggiano's, Texas Roadhouse and Bubba's 33.</p></div>
+    <div><a href="samples/DATA_DICTIONARY.md">Data dictionary and methodology</a>
+      <p>Every field, the comp definition and how chains are mapped.</p></div>
+  </div>
+</section>
+
+<section id="method">
+  <h2 class="sec">Where the numbers come from</h2>
+  <div class="method">
+    <p>Every Texas holder of a mixed-beverage permit files a monthly return with the Texas Comptroller of Public Accounts,
+    reporting liquor, wine, beer and cover-charge receipts for each location. The state publishes these returns as open data.</p>
+    <p>PourSignal loads every return, gives each venue a stable ID, resolves filer and trade names to 93 chains and their
+    parent companies, and computes same-store growth with the 18-month rule restaurant companies use.</p>
+    <p>Each month is flagged with its filing completeness so a late-filing month is never mistaken for a drop in sales.
+    Recent months can be revised by amended returns.</p>
+    <p>These are public government records: no consumer data and no material non-public information. Owner names that look like
+    private individuals are withheld. PourSignal is independent and is not affiliated with the State of Texas.</p>
+  </div>
+</section>
+
+<footer>
+  <p class="cta">Questions, a custom cut, or a trial?</p>
+  <p>Our contact address is being set up and will appear here shortly.</p>
+  <p class="small">Data current through August 2026 (complete) and September 2026 (partial). Source: Texas Comptroller of Public Accounts, Mixed Beverage Gross Receipts.</p>
+</footer>
+</div>
+</body>
+</html>
